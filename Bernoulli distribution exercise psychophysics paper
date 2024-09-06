@@ -1,3 +1,6 @@
+import random as rnd
+from scipy.stats import bernoulli
+
 # In Python we can use random, which produces a random variable on the interval 
 #   [0,1), which means that all values are greater than or equal to 0 and less 
 #   than 1. This function is park of the "random" package imported above as "rnd".
