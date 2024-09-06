@@ -1,0 +1,30 @@
+def bayesian_probability(prevalence, sensitivity, specificity):
+    """
+    Calculate the probability that a person has the disease given a positive test result.
+
+    Parameters:
+    - prevalence: The prior probability of having the disease (P(Disease)).
+    - sensitivity: The probability of a positive test result given the disease (P(Pos|Disease)).
+    - specificity: The probability of a negative test result given no disease (P(Neg|No Disease)).
+
+    Returns:
+    - The posterior probability that the person has the disease given a positive test result (P(Disease|Pos)).
+    """
+    # Probability of testing positive given no disease (false positive rate)
+    false_positive_rate = 1 - specificity
+    
+    # Total probability of testing positive (P(Pos))
+    p_pos = (sensitivity * prevalence) + (false_positive_rate * (1 - prevalence))
+    
+    # Posterior probability (P(Disease|Pos))
+    p_disease_given_pos = (sensitivity * prevalence) / p_pos
+    
+    return p_disease_given_pos
+
+# Example usage
+prevalence = 0.1        # 10% prevalence of the disease
+sensitivity = 0.95      # 95% sensitivity of the test
+specificity = 0.90      # 90% specificity of the test
+
+probability = bayesian_probability(prevalence, sensitivity, specificity)
+print(f"The probability that a person who tests positive actually has the disease is {probability:.2f}")
