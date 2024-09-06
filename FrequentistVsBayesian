@@ -1,0 +1,34 @@
+>> Exercises 1&2
+
+from scipy.stats import binom_test
+
+def is_significant(num_positives, num_tests, expected_proportion=0.5, alpha=0.05):
+    """
+    Determine if a positive test result is statistically significant.
+
+    Parameters:
+    - num_positives: The number of positive test results observed.
+    - num_tests: The total number of tests conducted.
+    - expected_proportion: The expected proportion of positives under the null hypothesis.
+    - alpha: The significance level.
+
+    Returns:
+    - A tuple containing the p-value and whether the result is significant.
+    """
+    # Perform a binomial test
+    p_value = binom_test(num_positives, num_tests, expected_proportion, alternative='greater')
+
+    # Determine if the p-value is less than the significance level
+    is_significant = p_value < alpha
+
+    return p_value, is_significant
+
+# Example usage
+num_positives = 12  # Number of positive results observed
+num_tests = 20      # Total number of tests conducted
+expected_proportion = 0.5  # Assuming a 50% chance of a positive result under the null hypothesis
+
+p_value, significant = is_significant(num_positives, num_tests, expected_proportion)
+
+print(f"P-value: {p_value}")
+print(f"Is the result statistically significant? {'Yes' if significant else 'No'}")
