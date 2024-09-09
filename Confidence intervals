@@ -23,7 +23,7 @@ for n in sample_sizes:
     confidence_interval = (mean - margin_of_error, mean + margin_of_error)
     
     print(f"Sample Size: {n}")
-    print(f"95% Confidence Interval: {confidence_interval}\n")
+    print(f"Method 1 zscore 95% Confidence Interval: {confidence_interval}\n")
 
 
 # Method 2 t-distribution
@@ -50,7 +50,7 @@ for n in sample_sizes:
     confidence_interval = (mean - margin_of_error, mean + margin_of_error)
     
     print(f"Sample Size: {n}")
-    print(f"95% Confidence Interval: {confidence_interval}\n")
+    print(f"Method 2 tdistribution 95% Confidence Interval: {confidence_interval}\n")
 
 # Method 3 bootstrapping
 # Parameters
@@ -82,7 +82,7 @@ for n in sample_sizes:
     ci_lower, ci_upper = bootstrap_ci(original_data, n_bootstrap)
     
     print(f"Sample Size: {n}")
-    print(f"95% Confidence Interval (Bootstrap): ({ci_lower:.2f}, {ci_upper:.2f})\n")
+    print(f"Method 3 bootstrapped 95% Confidence Interval (Bootstrap): ({ci_lower:.2f}, {ci_upper:.2f})\n")
 
 # Method 4 credible intervals
 # Parameters
