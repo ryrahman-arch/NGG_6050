@@ -1,0 +1,362 @@
+# Get toolboxes
+
+import numpy as np
+import random as rnd
+import collections
+import matplotlib.pyplot as plt
+import time
+import scipy.stats as st
+
+from scipy.stats import bernoulli, binom, poisson, chi2
+from IPython.display import clear_output
+from operator import itemgetter
+from statsmodels.stats import proportion
+
+from numpy import matlib
+
+# Exercise 1
+# The full probability distribution describes the probabilty of obtaining each 
+#   possible number of successes (k), given n and p. If we set n=10, the the 
+#   possible values of k are 0, 1, ..., 10. We can use binom.rvs to simulate data
+#   and then use this distribution/empirical data to then subsequently calculate 
+#   the probability of getting k successes/releases given a release probability
+#   of 0.2 based on binomial distribution.
+
+# Parameters
+n = 10  # number of quanta
+p = 0.2  # probability of release
+num_trials = 1000  # number of simulations
+
+# Simulate the data
+simulated_data = binom.rvs(n, p, size=num_trials)
+
+# Calculate the frequencies of each number of quanta released
+frequencies = np.bincount(simulated_data, minlength=n + 1)
+
+# Calculate the probabilities based on the frequencies
+probabilities = frequencies / num_trials
+
+# Print the probabilities
+for k, prob in enumerate(probabilities):
+    print(f"Estimated probability of releasing {k} quanta: {prob:.4f}")
+
+# Exercise 2
+# Assuming we know there are only 14 quanta, we can compute how release
+#   probability per event affects the chance of releaseing exactly 8 quanta
+
+n = 14  # number of quanta
+num_trials = 1000  # number of simulations
+deciles = np.arange(0.1, 1.1, 0.1)  # probabilities from 0.1 to 1.0
+
+# Dictionary to store probabilities of releasing 8 quanta for each decile
+probabilities_of_8 = {}
+
+for p in deciles:
+    # Simulate the data
+    simulated_data = binom.rvs(n, p, size=num_trials)
+    
+    # Calculate the frequency of exactly 8 quanta released
+    frequency_of_8 = np.sum(simulated_data == 8)
+    
+    # Calculate the probability
+    probability_of_8 = frequency_of_8 / num_trials
+    
+    # Store the result
+    probabilities_of_8[p] = probability_of_8
+
+# Print the results, which illustrate that p = 0.6 is most probable
+for p, prob in probabilities_of_8.items():
+    print(f"Probability of releasing exactly 8 quanta with release probability {p:.1f}: {prob:.4f}")
+
+# Exercise 3a
+# Computing likelihood and log-likelihood functions
+
+# The likelihood and log-likelihood for fixed p = 0.1 given release of 5 and 8 occurred
+# Parameters
+n = 14  # total number of quanta
+p = 0.1 # release probability per event
+num_trials = 1000  # number of simulations
+
+# Simulate data using binom.rvs
+simulated_data = binom.rvs(n=n, p=p, size=num_trials)
+
+# Count the occurrences of exactly 5 and 8 quanta being released
+count_5 = np.sum(simulated_data == 5)
+count_8 = np.sum(simulated_data == 8)
+
+# Compute the probabilities based on the simulated data
+prob_5 = count_5 / num_trials
+prob_8 = count_8 / num_trials
+
+# Compute the total likelihood (product of the two probabilities)
+total_likelihood = prob_5 * prob_8
+
+# Compute the log-likelihood (sum of the logs of the probabilities)
+# Adding a small value to avoid taking the log of zero
+epsilon = 1e-10
+log_prob_5 = np.log(prob_5 + epsilon)
+log_prob_8 = np.log(prob_8 + epsilon)
+total_log_likelihood = log_prob_5 + log_prob_8
+
+# Print the results
+print(f"Probability of releasing exactly 5 quanta (simulated): {prob_5:.4f}")
+print(f"Probability of releasing exactly 8 quanta (simulated): {prob_8:.4f}")
+print(f"Total likelihood (product of probabilities): {total_likelihood:.4f}")
+print(f"Log likelihood (sum of log probabilities): {total_log_likelihood:.4f}")
+
+# Exercise 3b
+# Repeating likelihood and log-likelihood for deciles of p and returning maxes
+# Parameters
+n = 14  # total number of quanta
+k1 = 5  # number of quanta for which we want to compute probability
+k2 = 8  # number of quanta for which we want to compute probability
+num_trials = 1000  # number of simulations
+
+# Define deciles of release probability from 0.1 to 1.0
+deciles = np.arange(0.1, 1.1, 0.1)
+
+# Initialize variables to track maximum likelihood and log-likelihood
+max_likelihood = -np.inf
+max_log_likelihood = -np.inf
+best_p_likelihood = None
+best_p_log_likelihood = None
+
+# Function to calculate likelihood and log-likelihood based on simulated data
+def calculate_likelihoods_from_simulation(p, n, k1, k2, num_trials):
+    # Simulate data
+    simulated_data = binom.rvs(n=n, p=p, size=num_trials)
+    
+    # Count the occurrences of exactly k1 and k2 quanta being released
+    count_k1 = np.sum(simulated_data == k1)
+    count_k2 = np.sum(simulated_data == k2)
+    
+    # Compute the probabilities based on the simulated data
+    prob_k1 = count_k1 / num_trials
+    prob_k2 = count_k2 / num_trials
+    
+    # Compute the total likelihood (product of the two probabilities)
+    total_likelihood = prob_k1 * prob_k2
+    
+    # Compute the log-likelihood (sum of the logs of the probabilities)
+    # Adding a small value to avoid taking the log of zero
+    epsilon = 1e-10
+    log_prob_k1 = np.log(prob_k1 + epsilon)
+    log_prob_k2 = np.log(prob_k2 + epsilon)
+    total_log_likelihood = log_prob_k1 + log_prob_k2
+    
+    return prob_k1, prob_k2, total_likelihood, total_log_likelihood
+
+# Compute and print results for each decile
+for p in deciles:
+    prob_k1, prob_k2, total_likelihood, total_log_likelihood = calculate_likelihoods_from_simulation(
+        p, n, k1, k2, num_trials
+    )
+    
+    # Print the results
+    print(f"Release probability {p:.1f} -")
+    print(f"  Probability of releasing exactly {k1} quanta (simulated): {prob_k1:.4f}")
+    print(f"  Probability of releasing exactly {k2} quanta (simulated): {prob_k2:.4f}")
+    print(f"  Total likelihood (product of probabilities): {total_likelihood:.4f}")
+    print(f"  Log likelihood (sum of log probabilities): {total_log_likelihood:.4f}")
+    print()
+    
+    # Update maximum values if current values are higher
+    if total_likelihood > max_likelihood:
+        max_likelihood = total_likelihood
+        best_p_likelihood = p
+    
+    if total_log_likelihood > max_log_likelihood:
+        max_log_likelihood = total_log_likelihood
+        best_p_log_likelihood = p
+
+# Print maximum values
+print(f"Maximum Total Likelihood: {max_likelihood:.4f} at release probability {best_p_likelihood:.1f}")
+print(f"Maximum Total Log-Likelihood: {max_log_likelihood:.4f} at release probability {best_p_log_likelihood:.1f}")
+
+# Exercise 3c
+# Doing the same thing at higher resolutions
+
+# Parameters
+n = 14  # total number of quanta
+k1 = 5  # number of quanta for which we want to compute probability
+k2 = 8  # number of quanta for which we want to compute probability
+num_trials = 1000  # number of simulations
+
+# Define function to calculate likelihoods and log-likelihoods
+def calculate_likelihoods_from_simulation(p, n, k1, k2, num_trials):
+    # Simulate data
+    simulated_data = binom.rvs(n=n, p=p, size=num_trials)
+    
+    # Count the occurrences of exactly k1 and k2 quanta being released
+    count_k1 = np.sum(simulated_data == k1)
+    count_k2 = np.sum(simulated_data == k2)
+    
+    # Compute the probabilities based on the simulated data
+    prob_k1 = count_k1 / num_trials
+    prob_k2 = count_k2 / num_trials
+    
+    # Compute the total likelihood (product of the two probabilities)
+    total_likelihood = prob_k1 * prob_k2
+    
+    # Compute the log-likelihood (sum of the logs of the probabilities)
+    # Adding a small value to avoid taking the log of zero
+    epsilon = 1e-10
+    log_prob_k1 = np.log(prob_k1 + epsilon)
+    log_prob_k2 = np.log(prob_k2 + epsilon)
+    total_log_likelihood = log_prob_k1 + log_prob_k2
+    
+    return prob_k1, prob_k2, total_likelihood, total_log_likelihood
+
+# Define different resolutions for probabilities
+def generate_probabilities(resolution):
+    return np.arange(0, 1.0, resolution)
+
+# Define resolutions to test
+resolutions = [0.1, 0.05, 0.01]  # Different resolutions
+
+# Initialize variables to track maximum likelihood and log-likelihood
+max_likelihood = -np.inf
+max_log_likelihood = -np.inf
+best_p_likelihood = None
+best_p_log_likelihood = None
+
+# Iterate over different resolutions
+for resolution in resolutions:
+    deciles = generate_probabilities(resolution)
+    print(f"\nResolution: {resolution:.2f}")
+
+    # Compute and print results for each probability in the current resolution
+    for p in deciles:
+        prob_k1, prob_k2, total_likelihood, total_log_likelihood = calculate_likelihoods_from_simulation(
+            p, n, k1, k2, num_trials
+        )
+        
+        # Print the results
+        print(f"  Release probability {p:.2f} -")
+        print(f"    Probability of releasing exactly {k1} quanta (simulated): {prob_k1:.4f}")
+        print(f"    Probability of releasing exactly {k2} quanta (simulated): {prob_k2:.4f}")
+        print(f"    Total likelihood (product of probabilities): {total_likelihood:.4f}")
+        print(f"    Log likelihood (sum of log probabilities): {total_log_likelihood:.4f}")
+        
+        # Update maximum values if current values are higher
+        if total_likelihood > max_likelihood:
+            max_likelihood = total_likelihood
+            best_p_likelihood = p
+        
+        if total_log_likelihood > max_log_likelihood:
+            max_log_likelihood = total_log_likelihood
+            best_p_log_likelihood = p
+    
+    # Print maximum values for the current resolution
+    print(f"  Maximum Total Likelihood: {max_likelihood:.4f} at release probability {best_p_likelihood:.2f}")
+    print(f"  Maximum Total Log-Likelihood: {max_log_likelihood:.4f} at release probability {best_p_log_likelihood:.2f}")
+
+# Exercise 4
+# Trying to compute p hat given data
+
+# Data provided
+measured_releases = np.arange(15)  # Possible counts from 0 to 14
+counts = np.array([0, 0, 3, 7, 10, 19, 26, 16, 16, 5, 5, 0, 0, 0, 0])
+
+# Parameters
+n = 14  # total number of quanta
+step_size = 0.01  # step size for probability
+probabilities = np.arange(0, 1 + step_size, step_size)  # Release probabilities from 0 to 1
+
+# Function to calculate likelihood of observing the data given a probability
+def calculate_likelihood(p, n, measured_releases, counts):
+    # Compute the expected probabilities for each number of releases
+    expected_probs = binom.pmf(measured_releases, n, p)
+    
+    # Compute the likelihood of observing the actual counts
+    likelihood = np.prod(expected_probs ** counts)
+    return likelihood
+
+# Initialize variables to track the best probability and its likelihood
+max_likelihood = -np.inf
+best_probability = None
+
+# Evaluate likelihoods for each probability
+for p in probabilities:
+    likelihood = calculate_likelihood(p, n, measured_releases, counts)
+    
+    # Update the maximum likelihood and best probability
+    if likelihood > max_likelihood:
+        max_likelihood = likelihood
+        best_probability = p
+
+# Print the result
+print(f"Most likely release probability per event: {best_probability:.2f}")
+print(f"Maximum likelihood: {max_likelihood:.4e}")
+
+# Exercise 5a
+# Estimating p-hat given release of 7 quanta after change in temp
+
+# Parameters
+n = 14  # total number of quanta
+observed_releases = 7  # number of quanta released
+probabilities = np.arange(0, 1.01, 0.01)  # Test probabilities from 0 to 1 with step size 0.01
+
+# Function to calculate likelihood for given probability
+def calculate_likelihood(p, n, observed_releases):
+    # Compute the probability of observing exactly observed_releases quanta
+    prob_observation = binom.pmf(observed_releases, n, p)
+    return prob_observation
+
+# Initialize variables to track the best probability and its likelihood
+max_likelihood = -np.inf
+best_probability = None
+
+# Evaluate likelihoods for each probability
+for p in probabilities:
+    likelihood = calculate_likelihood(p, n, observed_releases)
+    
+    # Update the maximum likelihood and best probability
+    if likelihood > max_likelihood:
+        max_likelihood = likelihood
+        best_probability = p
+
+# Print the result
+print(f"Maximum likelihood estimate (p-hat): {best_probability:.2f}")
+print(f"Maximum likelihood: {max_likelihood:.4e}")
+
+# Exercise 5b
+# Determining if temp affects quantal release
+
+# Parameters
+n = 14  # total number of quanta
+p = 0.3  # true release probability per event
+k = 7    # number of quanta released
+
+# Compute the probability of releasing exactly k quanta
+probability = binom.pmf(k, n, p)
+
+# Compute the p-value for a two-tailed test
+# Calculate the probability of observing k or more quanta
+p_value_upper = binom.sf(k - 1, n, p)
+# Calculate the probability of observing k or fewer quanta
+p_value_lower = binom.cdf(k, n, p)
+
+# Two-tailed p-value is the sum of the probabilities in both tails
+p_value = min(p_value_upper, p_value_lower) * 2
+
+# Print the results
+print(f"Probability of releasing exactly {k} quanta: {probability:.4f}")
+print(f"P-value for the observed result: {p_value:.4f}")
+
+# Determine significance
+alpha = 0.05  # significance level
+if p_value < alpha:
+    print("The result is statistically significant.")
+else:
+    print("The result is not statistically significant.")
+
+
+
+
+
+
+
+
+     
+     
